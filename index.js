@@ -57,7 +57,7 @@ const createQuote = async (checkInDate, checkOutDate, guests, guestId, Children,
       Adults: guests,
       Children: Children || 0,
       Pets: Pets || 0,
-      PropertyId: PropertyId, // Ensure PropertyId is provided
+      // PropertyId: PropertyId, // Ensure PropertyId is provided
     };
 
     const response = await axios.post(
