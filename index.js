@@ -1,21 +1,22 @@
 import express from "express";
 import axios from "axios";
 import dotenv from "dotenv";
+import base64 from "base-64";
 
 dotenv.config(); // Load environment variables
 
 const app = express();
 app.use(express.json()); // Parse JSON requests
 
-const OWNERREZ_API_KEY = process.env.OWNERREZ_API_KEY; // Store API key in .env
+// Get OwnerRez credentials from .env file
+const OWNERREZ_USERNAME = process.env.OWNERREZ_USERNAME;
+const OWNERREZ_PASSWORD = process.env.OWNERREZ_PASSWORD;
+
+// Encode credentials for Basic Auth
+const basicAuth = `Basic ${base64.encode(`${OWNERREZ_USERNAME}:${OWNERREZ_PASSWORD}`)}`;
 
 // Function to create a guest in OwnerRez
-const createGuest = async (
-  first_name,
-  last_name,
-  email,
-  phone,
-) => {
+const createGuest = async (first_name, last_name, email, phone) => {
   try {
     const guestPayload = {
       first_name,
@@ -34,7 +35,7 @@ const createGuest = async (
       {
         headers: {
           "Content-Type": "application/json",
-          "X-Api-Key": OWNERREZ_API_KEY,
+          Authorization: basicAuth, // Use Basic Auth
         },
       }
     );
@@ -47,24 +48,16 @@ const createGuest = async (
 };
 
 // Function to create an inquiry in OwnerRez
-const createQuote = async (
-  checkInDate,
-  checkOutDate,
-  guests,
-  guestId,
-  Children,
-  Pets
-) => {
+const createQuote = async (checkInDate, checkOutDate, guests, guestId, Children, Pets, PropertyId) => {
   try {
     const quotePayload = {
       GuestId: guestId,
       Arrival: checkInDate,
       Departure: checkOutDate,
       Adults: guests,
-      Children: guests,
-      PropertyId: PropertyId,
       Children: Children || 0,
       Pets: Pets || 0,
+      PropertyId: PropertyId, // Ensure PropertyId is provided
     };
 
     const response = await axios.post(
@@ -73,7 +66,7 @@ const createQuote = async (
       {
         headers: {
           "Content-Type": "application/json",
-          "X-Api-Key": OWNERREZ_API_KEY,
+          Authorization: basicAuth, // Use Basic Auth
         },
       }
     );
@@ -88,42 +81,25 @@ const createQuote = async (
 // Function to process the webhook request
 const processWebhook = async (req, res) => {
   try {
-    const { first_name="Hello", last_name="world", custom_fields } = req.body;
-
-    // if (
-    //   !custom_fields ||
-    //   !custom_fields["Check in Date"] ||
-    //   !custom_fields["Check Out Date"]
-    // ) {
-    //   return res
-    //     .status(400)
-    //     .json({ error: "Missing check-in/check-out dates" });
-    // }
+    const { first_name = "Hello", last_name = "world", custom_fields } = req.body;
 
     const checkInDate = custom_fields["Check in Date"];
     const checkOutDate = custom_fields["Check Out Date"];
     const guests = custom_fields["Adults"] || 1; // Default to 1 adult if not provided
     const email = custom_fields["Email"] || "no-email@example.com";
     const phone = custom_fields["Phone"] || "N/A";
+    const propertyId = custom_fields["Property ID"] || null;
+    const children = custom_fields["Children"] || 0;
+    const pets = custom_fields["Pets"] || 0;
 
     console.log("Received booking request from ManyChat:", req.body);
 
     // Step 1: Create Guest
-    const guestId = await createGuest(
-      first_name,
-      last_name,
-      email,
-      phone,
-    );
+    const guestId = await createGuest(first_name, last_name, email, phone);
     console.log("Guest Created Successfully with ID:", guestId);
 
     // Step 2: Create Inquiry
-    const inquiryLink = await createQuote(
-      checkInDate,
-      checkOutDate,
-      guests,
-      guestId
-    );
+    const inquiryLink = await createQuote(checkInDate, checkOutDate, guests, guestId, children, pets, propertyId);
     console.log("Generated Quote Link:", inquiryLink);
 
     // Step 3: Send response back to ManyChat
