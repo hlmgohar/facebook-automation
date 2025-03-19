@@ -40,7 +40,7 @@ const createGuest = async (first_name, last_name, email, phone) => {
       }
     );
 
-    return response.data.guestId; // Return Guest ID
+    return response.data; // Return Guest ID
   } catch (error) {
     console.error("Error creating guest:", error.response?.data || error);
     throw new Error("Failed to create guest");
