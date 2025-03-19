@@ -40,7 +40,7 @@ const createGuest = async (first_name, last_name, email, phone) => {
       }
     );
 
-    return response.data; // Return Guest ID
+    return response.data.id; // Return Guest ID
   } catch (error) {
     console.error("Error creating guest:", error.response?.data || error);
     throw new Error("Failed to create guest");
@@ -99,12 +99,12 @@ const processWebhook = async (req, res) => {
     console.log("Guest Created Successfully with ID:", guestId);
 
     // Step 2: Create Inquiry
-    const inquiryLink = await createQuote(checkInDate, checkOutDate, guests, guestId, children, pets, propertyId);
-    console.log("Generated Quote Link:", inquiryLink);
+    const quoteLink = await createQuote(checkInDate, checkOutDate, guests, guestId, children, pets, propertyId);
+    console.log("Generated Quote Link:", quoteLink);
 
     // Step 3: Send response back to ManyChat
     return res.json({
-      text: `✅ Hi ${first_name}, here is your booking link: ${inquiryLink}`,
+      text: `✅ Hi ${first_name}, here is your booking link: ${quoteLink}`,
     });
   } catch (error) {
     console.error("Error processing webhook:", error);
