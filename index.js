@@ -87,7 +87,7 @@ const processWebhook = async (req, res) => {
     const checkOutDate = custom_fields["Check Out Date"];
     const guests = custom_fields["Adults"] || 1; // Default to 1 adult if not provided
     const email = custom_fields["Email"] || "no-email@example.com";
-    const phone = custom_fields["Phone"] || 0;
+    const phone = custom_fields["Phone"] || "+44 7723 476354";
     const propertyId = custom_fields["Property ID"] || null;
     const children = custom_fields["Children"] || 0;
     const pets = custom_fields["Pets"] || 0;
