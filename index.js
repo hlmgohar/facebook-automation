@@ -90,15 +90,15 @@ const processWebhook = async (req, res) => {
   try {
     const { first_name="Hello", last_name="world", custom_fields } = req.body;
 
-    if (
-      !custom_fields ||
-      !custom_fields["Check in Date"] ||
-      !custom_fields["Check Out Date"]
-    ) {
-      return res
-        .status(400)
-        .json({ error: "Missing check-in/check-out dates" });
-    }
+    // if (
+    //   !custom_fields ||
+    //   !custom_fields["Check in Date"] ||
+    //   !custom_fields["Check Out Date"]
+    // ) {
+    //   return res
+    //     .status(400)
+    //     .json({ error: "Missing check-in/check-out dates" });
+    // }
 
     const checkInDate = custom_fields["Check in Date"];
     const checkOutDate = custom_fields["Check Out Date"];
