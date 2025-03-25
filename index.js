@@ -187,7 +187,7 @@ const processWebhook = async (req, res) => {
 
     // Step 3: Send response back to ManyChat
     return res.json({
-      text: `✅ Hi ${first_name}, here is your booking link: ${quoteLink}`,
+      text: `✅ Hi ${first_name}, here is your booking link: ${quoteLink.paymentForm}`,
     });
   } catch (error) {
     console.error("Error processing webhook:", error);
