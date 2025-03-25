@@ -67,7 +67,7 @@ const createQuote = async (
       Adults: guests,
       Children: Children || 0,
       Pets: Pets || 0,
-      PropertyId: PropertyId || 450490, // Ensure PropertyId is provided
+      PropertyId: PropertyId || 448447, // Ensure PropertyId is provided
     };
 
     const response = await axios.post(
