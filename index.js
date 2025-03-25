@@ -71,7 +71,7 @@ const createQuote = async (
     };
 
     const response = await axios.post(
-      "https://api.ownerrez.com/v2/quotes",
+      "https://api.ownerrez.com/v1/quotes",
       quotePayload,
       {
         headers: {
