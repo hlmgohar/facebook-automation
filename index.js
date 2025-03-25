@@ -71,7 +71,7 @@ const createQuote = async (
     };
 
     const response = await axios.post(
-      "https://api.ownerrez.com/v1/quotes",
+      "https://api.ownerrez.com/help/v1/Api/TEST-v1-quotes_addCharges_skipRuleValidation_ignoreDateConflicts",
       quotePayload,
       {
         headers: {
