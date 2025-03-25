@@ -90,8 +90,46 @@ const createQuote = async (
 
 const getListProperties = async () => {
   try {
-    const response = await axios.get(
-      "https://api.ownerrez.com/v2/properties",
+    const response = await axios.get("https://api.ownerrez.com/v2/properties", {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: basicAuth, // Use Basic Auth
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error creating inquiry:", error.response?.data || error);
+    throw new Error("Failed to create inquiry");
+  }
+};
+
+// Function to create an inquiry in OwnerRez
+const createInquiry = async (req, res) => {
+  try {
+    const {
+      first_name = "John",
+      last_name = "Doe",
+      email = "johndoe@example.com",
+      phone = "123-456-7890",
+      checkInDate = new Date().toISOString().split("T")[0], // Default to today's date
+      checkOutDate = new Date(Date.now() + 86400000)
+        .toISOString()
+        .split("T")[0], // Default to tomorrow
+      guests = 1, // Default to 1 adult
+    } = req.body;
+
+    const inquiryPayload = {
+      name: `${first_name} ${last_name}`,
+      email,
+      phone,
+      arrival: checkInDate,
+      departure: checkOutDate,
+      adults: guests,
+    };
+
+    const ownerRezResponse = await axios.post(
+      "https://api.ownerrez.com/v1/inquiries",
+      inquiryPayload,
       {
         headers: {
           "Content-Type": "application/json",
@@ -99,10 +137,15 @@ const getListProperties = async () => {
         },
       }
     );
-    return response.data;
+
+    return res
+      .status(200)
+      .json({ type: "SUCCESS", data: ownerRezResponse.data });
   } catch (error) {
     console.error("Error creating inquiry:", error.response?.data || error);
-    throw new Error("Failed to create inquiry");
+    return res
+      .status(500)
+      .json({ type: "ERROR", message: "Failed to create inquiry" });
   }
 };
 
@@ -165,8 +208,9 @@ const getProperties = async (req, res) => {
 };
 
 // Webhook route
-app.post("/webhook/createInquiry", processWebhook);
+app.post("/webhook/createQuotes", processWebhook);
 app.get("/list/properties", getProperties);
+app.post("/webhook/createInquiry", createInquiry);
 
 // Start the server
 const PORT = process.env.PORT || 3000;
