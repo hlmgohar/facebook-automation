@@ -239,11 +239,10 @@ const checkAvailability = async (propertyId, checkInDate, checkOutDate) => {
       }
     );
 
-    const days = response.data || [];
+    const properties = response.data?.items || [];
 
-    console.log(days, "This is the days")
     // Return true if all dates are available
-    return days.every((day) => day.isAvailable);
+    return properties.length > 0;
   } catch (error) {
     console.error(
       "Error checking availability:",
