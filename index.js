@@ -241,6 +241,7 @@ const checkAvailability = async (propertyId, checkInDate, checkOutDate) => {
 
     const days = response.data?.days || [];
 
+    console.log(days, "This is the days")
     // Return true if all dates are available
     return days.every((day) => day.isAvailable);
   } catch (error) {
