@@ -17,6 +17,8 @@ const basicAuth = `Basic ${base64.encode(
   `${OWNERREZ_USERNAME}:${OWNERREZ_PASSWORD}`
 )}`;
 
+const PropertyID = 427474;
+
 // Function to create a guest in OwnerRez
 const createGuest = async (first_name, last_name, email, phone) => {
   try {
@@ -56,8 +58,7 @@ const createQuote = async (
   guests,
   guestId,
   Children,
-  Pets,
-  PropertyId
+  Pets
 ) => {
   try {
     const quotePayload = {
@@ -67,7 +68,7 @@ const createQuote = async (
       Adults: guests,
       Children: Children || 0,
       Pets: Pets || 0,
-      PropertyId: PropertyId || 427474, // Ensure PropertyId is provided
+      PropertyId: PropertyID, // Ensure PropertyId is provided
     };
 
     const response = await axios.post(
@@ -169,9 +170,22 @@ const processWebhook = async (req, res) => {
 
     console.log("Received booking request from ManyChat:", req.body);
 
+    // Step 1: Check Availability
+    const isAvailable = await checkAvailability(
+      PropertyID,
+      checkInDate,
+      checkOutDate
+    );
+
+    if (!isAvailable) {
+      return res.json({
+        text: `❌ Sorry ${first_name}, the property is not available from ${checkInDate} to ${checkOutDate}. Please choose different dates.`,
+        isAvailable,
+      });
+    }
+
     // Step 1: Create Guest
     const guestId = await createGuest(first_name, last_name, email, phone);
-    console.log("Guest Created Successfully with ID:", guestId);
 
     // Step 2: Create Inquiry
     const quoteLink = await createQuote(
@@ -188,6 +202,7 @@ const processWebhook = async (req, res) => {
     // Step 3: Send response back to ManyChat
     return res.json({
       text: `✅ Hi ${first_name}, here is your booking link: ${quoteLink.paymentForm}`,
+      isAvailable
     });
   } catch (error) {
     console.error("Error processing webhook:", error);
@@ -204,6 +219,36 @@ const getProperties = async (req, res) => {
   } catch (error) {
     console.error("Error processing webhook:", error);
     return res.status(500).json({ error: error.message });
+  }
+};
+
+const checkAvailability = async (propertyId, checkInDate, checkOutDate) => {
+  try {
+    const response = await axios.get(
+      `https://api.ownerrez.com/v2/propertysearch`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: basicAuth,
+        },
+        params: {
+          propertyId,
+          start: checkInDate,
+          end: checkOutDate,
+        },
+      }
+    );
+
+    const days = response.data?.days || [];
+
+    // Return true if all dates are available
+    return days.every((day) => day.isAvailable);
+  } catch (error) {
+    console.error(
+      "Error checking availability:",
+      error.response?.data || error
+    );
+    throw new Error("Failed to check availability");
   }
 };
 
