@@ -232,9 +232,9 @@ const checkAvailability = async (propertyId, checkInDate, checkOutDate) => {
           Authorization: basicAuth,
         },
         params: {
-          propertyId,
-          start: checkInDate,
-          end: checkOutDate,
+          property_ids: propertyId,
+          available_from: checkInDate,
+          available_to: checkOutDate,
         },
       }
     );
