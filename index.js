@@ -202,7 +202,7 @@ const processWebhook = async (req, res) => {
     // Step 3: Send response back to ManyChat
     return res.json({
       text: `✅ Hi ${first_name}, here is your booking link: ${quoteLink.paymentForm}`,
-      isAvailable
+      isAvailable,
     });
   } catch (error) {
     console.error("Error processing webhook:", error);
@@ -222,7 +222,14 @@ const getProperties = async (req, res) => {
   }
 };
 
-const checkAvailability = async (propertyId, checkInDate, checkOutDate) => {
+const checkAvailability = async (
+  propertyId,
+  checkInDate,
+  checkOutDate,
+  pets,
+  totalGuests,
+  bedrooms
+) => {
   try {
     const response = await axios.get(
       `https://api.ownerrez.com/v2/propertysearch`,
@@ -232,9 +239,11 @@ const checkAvailability = async (propertyId, checkInDate, checkOutDate) => {
           Authorization: basicAuth,
         },
         params: {
-          property_ids: propertyId,
           available_from: checkInDate,
           available_to: checkOutDate,
+          pets_allowed: pets > 0,
+          guests_min: totalGuests,
+          bedrooms_min: bedrooms,
         },
       }
     );
@@ -242,19 +251,37 @@ const checkAvailability = async (propertyId, checkInDate, checkOutDate) => {
     const properties = response.data?.items || [];
 
     // Return true if all dates are available
-    return properties.length > 0;
+    return properties;
   } catch (error) {
-    console.error(
-      "Error checking availability:",
-      error.response?.data || error
-    );
+    console.log(error.response.data.messages);
     throw new Error("Failed to check availability");
+  }
+};
+
+const checkAvailabilityProperty = async (req, res) => {
+  const { checkIn, checkOut, guests, childrens, pets, bedrooms } = req.body;
+
+  const totalGuests = guests + childrens;
+  try {
+    const properties = await checkAvailability(
+      "",
+      checkIn,
+      checkOut,
+      pets,
+      totalGuests,
+      bedrooms
+    );
+
+    return res.status(200).json(properties);
+  } catch (error) {
+    console.log(error, "This is the error");
   }
 };
 
 // Webhook route
 app.post("/webhook/createQuotes", processWebhook);
 app.get("/list/properties", getProperties);
+app.post("/list/properties/checkAvailability", checkAvailabilityProperty);
 app.post("/webhook/createInquiry", createInquiry);
 
 // Start the server
