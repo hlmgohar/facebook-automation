@@ -296,7 +296,7 @@ const checkAvailabilityProperty = async (req, res) => {
     const buttons = properties.map((property) => ({
       type: "dynamic_block_callback",
       caption: `${property.name} - ${property.location}`,
-      url: "https://yourdomain.com/api/select-property", // The endpoint to handle selection
+      url: "https://rentify2.exertlogics.com/api/select-property", // The endpoint to handle selection
       method: "post",
       payload: {
         property_id: property.id,
