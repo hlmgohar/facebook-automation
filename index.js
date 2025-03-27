@@ -273,14 +273,13 @@ const checkAvailabilityProperty = async (req, res) => {
     );
 
     if (!properties || properties.length === 0) {
-      // No properties found
       return res.status(200).json({
         version: "v2",
         content: {
           messages: [
             {
               type: "text",
-              text: `Sorry! We couldn't find any properties matching:
+              text: `❌ No properties found with:
 - Check-in: ${checkIn}
 - Check-out: ${checkOut}
 - Guests: ${totalGuests}
@@ -292,28 +291,33 @@ const checkAvailabilityProperty = async (req, res) => {
       });
     }
 
-    // Format each property into a button
-    const buttons = properties.map((property) => ({
+    const buttons = properties.slice(0, 10).map((property) => ({
       type: "dynamic_block_callback",
       caption: `${property.name} - ${property.location}`,
-      url: "https://rentify2.exertlogics.com/api/select-property", // The endpoint to handle selection
+      url: "https://rentify2.exertlogics.com/api/select-property",
       method: "post",
       payload: {
         property_id: property.id,
+        property_name: property.name,
       },
     }));
 
-    // Limit to 10 buttons max per ManyChat limitations
     return res.status(200).json({
       version: "v2",
       content: {
         messages: [
           {
             type: "text",
-            text: "Here are the available properties. Please choose one:",
-            buttons: buttons.slice(0, 10),
+            text: "🏡 Here are the available properties. Please select one:",
+            buttons: buttons,
           },
         ],
+        // Optional: prevent flow from continuing until selection
+        external_message_callback: {
+          url: "https://rentify2.exertlogics.com/api/select-property-wait",
+          method: "post",
+          timeout: 86400 // 1 day wait for input (if needed)
+        }
       },
     });
   } catch (error) {
@@ -324,7 +328,7 @@ const checkAvailabilityProperty = async (req, res) => {
         messages: [
           {
             type: "text",
-            text: "Oops! Something went wrong while checking availability. Please try again.",
+            text: "🚨 Error occurred while checking availability. Please try again.",
           },
         ],
       },
@@ -333,16 +337,16 @@ const checkAvailabilityProperty = async (req, res) => {
 };
 
 const handlePropertySelection = async (req, res) => {
-  const { property_id, id: userId } = req.body;
+  const { property_id, property_name } = req.body;
 
-  if (!property_id || !userId) {
+  if (!property_id) {
     return res.status(400).json({
       version: "v2",
       content: {
         messages: [
           {
             type: "text",
-            text: "Invalid request. Please try again.",
+            text: "⚠️ Invalid selection. Please try again.",
           },
         ],
       },
@@ -355,19 +359,32 @@ const handlePropertySelection = async (req, res) => {
       messages: [
         {
           type: "text",
-          text: `✅ Property selected successfully! (ID: ${property_id})`,
+          text: `✅ You selected: *${property_name}*`,
         },
+        {
+          type: "text",
+          text: "Let's move to the next step...",
+        }
       ],
       actions: [
         {
           action: "set_field_value",
           field_name: "selected_property_id",
           value: property_id,
-        },
+        }
       ],
-    },
+      // Optional: go to next step in flow (node/flow)
+      quick_replies: [
+        {
+          type: "node",
+          caption: "Next ➡️",
+          target: "Next Step Node" // Update this to your actual node name
+        }
+      ]
+    }
   });
 };
+
 
 // Webhook route
 app.post("/webhook/createQuotes", processWebhook);
