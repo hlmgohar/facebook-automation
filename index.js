@@ -260,8 +260,8 @@ const checkAvailability = async (
 
 const checkAvailabilityProperty = async (req, res) => {
   const { checkIn, checkOut, guests, childrens, pets, bedrooms } = req.body;
-
   const totalGuests = guests + childrens;
+
   try {
     const properties = await checkAvailability(
       "",
@@ -272,10 +272,101 @@ const checkAvailabilityProperty = async (req, res) => {
       bedrooms
     );
 
-    return res.status(200).json(properties);
+    if (!properties || properties.length === 0) {
+      // No properties found
+      return res.status(200).json({
+        version: "v2",
+        content: {
+          messages: [
+            {
+              type: "text",
+              text: `Sorry! We couldn't find any properties matching:
+- Check-in: ${checkIn}
+- Check-out: ${checkOut}
+- Guests: ${totalGuests}
+- Bedrooms: ${bedrooms}
+- Pets: ${pets ? "Yes" : "No"}`,
+            },
+          ],
+        },
+      });
+    }
+
+    // Format each property into a button
+    const buttons = properties.map((property) => ({
+      type: "dynamic_block_callback",
+      caption: `${property.name} - ${property.location}`,
+      url: "https://yourdomain.com/api/select-property", // The endpoint to handle selection
+      method: "post",
+      payload: {
+        property_id: property.id,
+      },
+    }));
+
+    // Limit to 10 buttons max per ManyChat limitations
+    return res.status(200).json({
+      version: "v2",
+      content: {
+        messages: [
+          {
+            type: "text",
+            text: "Here are the available properties. Please choose one:",
+            buttons: buttons.slice(0, 10),
+          },
+        ],
+      },
+    });
   } catch (error) {
-    console.log(error, "This is the error");
+    console.error("Error in checkAvailabilityProperty:", error);
+    return res.status(500).json({
+      version: "v2",
+      content: {
+        messages: [
+          {
+            type: "text",
+            text: "Oops! Something went wrong while checking availability. Please try again.",
+          },
+        ],
+      },
+    });
   }
+};
+
+const handlePropertySelection = async (req, res) => {
+  const { property_id, id: userId } = req.body;
+
+  if (!property_id || !userId) {
+    return res.status(400).json({
+      version: "v2",
+      content: {
+        messages: [
+          {
+            type: "text",
+            text: "Invalid request. Please try again.",
+          },
+        ],
+      },
+    });
+  }
+
+  return res.status(200).json({
+    version: "v2",
+    content: {
+      messages: [
+        {
+          type: "text",
+          text: `✅ Property selected successfully! (ID: ${property_id})`,
+        },
+      ],
+      actions: [
+        {
+          action: "set_field_value",
+          field_name: "selected_property_id",
+          value: property_id,
+        },
+      ],
+    },
+  });
 };
 
 // Webhook route
@@ -283,6 +374,7 @@ app.post("/webhook/createQuotes", processWebhook);
 app.get("/list/properties", getProperties);
 app.post("/list/properties/checkAvailability", checkAvailabilityProperty);
 app.post("/webhook/createInquiry", createInquiry);
+app.post("/api/select-property", handlePropertySelection);
 
 // Start the server
 const PORT = process.env.PORT || 3000;
