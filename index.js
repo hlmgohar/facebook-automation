@@ -293,7 +293,7 @@ const checkAvailabilityProperty = async (req, res) => {
 
     const buttons = properties.slice(0, 10).map((property) => ({
       type: "dynamic_block_callback",
-      caption: `${property.name} - ${property.location}`,
+      caption: `${property.name}`,
       url: "https://rentify2.exertlogics.com/api/select-property",
       method: "post",
       payload: {
@@ -316,8 +316,8 @@ const checkAvailabilityProperty = async (req, res) => {
         external_message_callback: {
           url: "https://rentify2.exertlogics.com/api/select-property-wait",
           method: "post",
-          timeout: 86400 // 1 day wait for input (if needed)
-        }
+          timeout: 86400, // 1 day wait for input (if needed)
+        },
       },
     });
   } catch (error) {
@@ -364,27 +364,26 @@ const handlePropertySelection = async (req, res) => {
         {
           type: "text",
           text: "Let's move to the next step...",
-        }
+        },
       ],
       actions: [
         {
           action: "set_field_value",
           field_name: "selected_property_id",
           value: property_id,
-        }
+        },
       ],
       // Optional: go to next step in flow (node/flow)
       quick_replies: [
         {
           type: "node",
           caption: "Next ➡️",
-          target: "Next Step Node" // Update this to your actual node name
-        }
-      ]
-    }
+          target: "Next Step Node", // Update this to your actual node name
+        },
+      ],
+    },
   });
 };
-
 
 // Webhook route
 app.post("/webhook/createQuotes", processWebhook);
